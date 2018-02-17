@@ -30,14 +30,6 @@ except NameError:
     pass
 
 
-
-SUBJ_BASE_URLS = [
-     ('react', 'https://reactjs.org/docs'),
-     ('redux', 'https://redux.js.org/docs'),
-     ('rxjs', 'http://reactivex.io/rxjs/manual'),
-     ('redux-observables', 'https://redux-observable.js.org/docs')
-]
-
 NOTES_TEMPLATE = \
 '''# {} NOTES
 
@@ -77,7 +69,7 @@ def numerical_menu(enumerable):
     Allow input selection of integer choice from within range of `enumerable`
     '''
     while True:
-        choice = input('?')
+        choice = input(':')
         if choice in ['Q', 'q']:
             return None
         try:
@@ -85,34 +77,43 @@ def numerical_menu(enumerable):
         except:
             continue
 
+
 def notes_dirs_menu(dirs):
     print_str = 'CHOOSE NOTES DIRECTORY:'
     print('{}\n{}'.format(print_str, '-' * len(print_str)))
+    max_l = max([len(directory['dir_name']) for directory in dirs])
     for i, directory in enumerate(dirs):
-       print('{} - {}'.format(i, directory['dir_name']))
+        print('{} - {}  {}' \
+            .format(i, directory['dir_name'].ljust(max_l), directory['dir']))
     return numerical_menu(dirs)
+
 
 def subject_menu(directory):
     subjects = directory['subjects']
-    print_str = '{} | OPEN NOTES FOR:'.format(directory['dir_name'].upper())
+    print_str = '{} | {}'.format(directory['dir_name'].upper(), directory['dir'])
     print('{}\n{}'.format(print_str , '-' * len(print_str)))
     for i, subj in enumerate(subjects):
        print('{} - {}'.format(i, subj['name']))
     return numerical_menu(subjects)
 
 
-def open_notes(subj, base_url):
-    subj = subj.upper()
-    base_url = base_url.rstrip('/')
-    notes_file = 'notes/{}_notes.md'.format(subj)
+def open_notes(subject, directory):
+    name = subject['name']
+    base_url = subject['base_url'].rstrip('/')
+    base_dir = directory['dir']
+    notes_file = '{}_notes.md'.format(name)
+    notes_dir = os.path.join(base_dir, 'notes',)
+    notes_path = os.path.join(notes_dir, notes_file)
     sub_domain = ''
-    # if notes file doesn't exist, make from template
+
+    if not os.path.exists(notes_dir):
+        os.makedirs(notes_dir)
+
     if not os.path.exists(notes_file):
-        with open(notes_file, 'w') as f:
-            f.write(NOTES_TEMPLATE.format(subj))
-    # if notes exists, extract subdomain from last line
+        with open(notes_path, 'w') as f:
+            f.write(NOTES_TEMPLATE.format(name.upper()))
     else:
-        with open(notes_file, 'r') as f:
+        with open(notes_path, 'r') as f:
             contents = f.read()
             sub_domain = contents.split()[-1].lstrip('/')
 
@@ -120,45 +121,33 @@ def open_notes(subj, base_url):
     webbrowser.open_new_tab('{}/{}'.format(base_url, sub_domain))
 
     # open notes file in editor specified in EDITOR_ARGS
-    open_vis_cmd = EDITOR_ARGS + [notes_file]
+    open_vis_cmd = EDITOR_ARGS + [notes_path]
+    print open_vis_cmd
     Popen(open_vis_cmd)
 
 
 def main(search_dir='.'):
-    # os.system('clear')
-
     dirs = find_notes_dirs(search_dir)
     if not dirs:
         print('no directories with "notes.json" found in "{}"' \
           .format(search_dir))
         sys.exit(0)
 
+    os.system('clear')
+
     directory = notes_dirs_menu(dirs) if len(dirs) > 1 else dirs[0]
     if not directory:
         sys.exit(0)
 
-    subject = subject_menu(directory) if len(directory['subjects']) > 1 else directory[0]
+    os.system('clear')
+
+    subject = subject_menu(directory) if len(directory['subjects']) > 1 \
+        else directory[0]
     if not subject:
         sys.exit(0)
-    
-    print subject
-    sys.exit(0)
 
-    # print notes options and wait for user response
-    print('OPEN NOTES FOR:\n{}'.format('-' * 20))
-    for i, subj_tup in enumerate(SUBJ_BASE_URLS):
-        subj, base_url = subj_tup
-        print('{} - {}'.format(i, subj))
-    while True:
-        choice = input('?')
-        if choice in ['Q', 'q']:
-            break
-        try:
-            subj, base_url = SUBJ_BASE_URLS[int(choice)]
-        except:
-            continue
-        open_notes(subj, base_url)
-        break
+    open_notes(subject, directory)
+
 
 if __name__ == '__main__':
     search_dir = argv[1] if len(argv) > 1 else '.'
