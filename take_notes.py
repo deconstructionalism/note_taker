@@ -117,10 +117,8 @@ def open_notes(subject, directory):
             contents = f.read()
             sub_domain = contents.split()[-1].lstrip('/')
 
-    # open full path in web browser
     webbrowser.open_new_tab('{}/{}'.format(base_url, sub_domain))
 
-    # open notes file in editor specified in EDITOR_ARGS
     open_vis_cmd = EDITOR_ARGS + [notes_path]
     print open_vis_cmd
     Popen(open_vis_cmd)
