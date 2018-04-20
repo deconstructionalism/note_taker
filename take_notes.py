@@ -55,6 +55,11 @@ def find_notes_dirs(search_dir):
             notes_path =  os.path.join(directory, 'notes.json')
             with open(notes_path, 'r') as f:
                 subjects = json.load(f)
+
+            if not assert_json_shape(subjects):
+                print('"notes.json" format incorrect!')
+                sys.exit(0)
+
             dir_info = {
                 'dir': directory,
                 'dir_name': directory.split('/')[-1],
@@ -62,6 +67,12 @@ def find_notes_dirs(search_dir):
             }
             dirs.append(dir_info)
     return dirs if len(dirs) > 0 else None
+
+def assert_json_shape(json_data):
+    '''
+    check that notes.json is the correct shape
+    '''
+    return True
 
 
 def numerical_menu(enumerable):
@@ -77,6 +88,7 @@ def numerical_menu(enumerable):
         except:
             continue
 
+    
 
 def notes_dirs_menu(dirs):
     print_str = 'CHOOSE NOTES DIRECTORY:'
@@ -99,6 +111,7 @@ def subject_menu(directory):
 
 def open_notes(subject, directory):
     name = subject['name']
+    # if subject['base_url']:
     base_url = subject['base_url'].rstrip('/')
     base_dir = directory['dir']
     notes_file = '{}_notes.md'.format(name)
